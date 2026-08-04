@@ -18,7 +18,8 @@ export default function AdminProducts() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 const [uploading, setUploading] = useState(false)
 const [saving, setSaving] = useState(false)
-  const [uploadedImages, setUploadedImages] = useState<any[]>([])
+  const [, setUploadedImages] = useState<any[]>([])
+
 
   const load = () => {
     supabase.from('products').select('*, images:product_images(*)').order('sort_order').then(({ data }) => {
