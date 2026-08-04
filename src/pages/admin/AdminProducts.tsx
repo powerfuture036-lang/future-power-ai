@@ -17,7 +17,8 @@ export default function AdminProducts() {
   const [form, setForm] = useState(emptyForm)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 const [uploading, setUploading] = useState(false)
-const [uploadedImages, setUploadedImages] = useState<any[]>([])
+const [saving, setSaving] = useState(false)
+  const [uploadedImages, setUploadedImages] = useState<any[]>([])
 
   const load = () => {
     supabase.from('products').select('*, images:product_images(*)').order('sort_order').then(({ data }) => {
@@ -30,6 +31,8 @@ const [uploadedImages, setUploadedImages] = useState<any[]>([])
   const openCreate = () => {
     setEditing(null)
     setForm(emptyForm)
+  setSelectedFiles([])
+setUploadedImages([])
     setShowForm(true)
   }
 
@@ -162,7 +165,15 @@ const uploadImages = async (productId: string) => {
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto glass-strong rounded-2xl border border-border p-6">
             <div className="flex justify-between mb-4">
               <h2 className="font-semibold">{editing ? 'Edit Product' : 'New Product'}</h2>
-              <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
+              <button
+                  onClick={() => {
+                   setShowForm(false)
+                   setSelectedFiles([])
+                   setUploadedImages([])
+                  }}
+                >
+                  <X className="h-5 w-5" />
+                </button>
             </div>
             <div className="space-y-3">
               {(['name', 'description', 'price', 'brand', 'power', 'fuel', 'voltage', 'frequency'] as const).map((field) => (
@@ -184,6 +195,46 @@ const uploadImages = async (productId: string) => {
                   )}
                 </div>
               ))}
+             <div>
+  <label className="text-xs text-muted mb-2 block">
+    Product Images
+  </label>
+
+  <label className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-5 cursor-pointer hover:bg-white/5">
+    <Upload className="w-5 h-5" />
+    <span>
+      {uploading ? "Uploading..." : "Choose one or more images"}
+    </span>
+
+    <input
+      type="file"
+      accept="image/*"
+      multiple
+      className="hidden"
+      onChange={(e) => {
+        if (e.target.files) {
+          setSelectedFiles(Array.from(e.target.files))
+        }
+      }}
+    />
+  </label>
+
+  {selectedFiles.length > 0 && (
+    <div className="grid grid-cols-3 gap-2 mt-3">
+      {selectedFiles.map((file, index) => (
+        <div
+          key={index}
+          className="rounded-lg border border-border p-2 text-center"
+        >
+          <Image className="w-8 h-8 mx-auto mb-1" />
+          <p className="text-[11px] truncate">
+            {file.name}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
               <div>
                 <label className="text-xs text-muted">Status</label>
                 <select
