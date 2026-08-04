@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://calm-alfajores-72318e.netlify.app/sitemap.xml
 
 Disallow: /admin
 Disallow: /fp-admin-login
