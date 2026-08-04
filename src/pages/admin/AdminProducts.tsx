@@ -4,7 +4,7 @@ import SEO from '@/components/common/SEO'
 import { supabase } from '@/lib/supabase'
 import { slugify, formatPrice } from '@/lib/utils'
 import type { Product } from '@/types'
-import { Plus, Trash2, Edit2, X } from 'lucide-react'
+import { Plus, Trash2, Edit2, X, Upload, Image } from 'lucide-react'
 
 const emptyForm = {
   name: '', description: '', price: '', status: 'available' as const, brand: '', power: '', fuel: '', voltage: '', frequency: '', category_id: ''
@@ -15,7 +15,9 @@ export default function AdminProducts() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [form, setForm] = useState(emptyForm)
-  const [saving, setSaving] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+const [uploading, setUploading] = useState(false)
+const [uploadedImages, setUploadedImages] = useState<any[]>([])
 
   const load = () => {
     supabase.from('products').select('*, images:product_images(*)').order('sort_order').then(({ data }) => {
@@ -68,13 +70,62 @@ export default function AdminProducts() {
     if (editing) {
       await supabase.from('products').update(payload).eq('id', editing.id)
     } else {
-      await supabase.from('products').insert({ ...payload, currency: 'USD', is_featured: false, sort_order: 0 })
+      const { data } = await supabase
+  .from('products')
+  .insert({
+    ...payload,
+    currency: 'USD',
+    is_featured: false,
+    sort_order: 0
+  })
+  .select()
+  .single()
+
+if (data) {
+  await uploadImages(data.id)
+}
     }
     setSaving(false)
     setShowForm(false)
     load()
   }
+const uploadImages = async (productId: string) => {
+  if (selectedFiles.length === 0) return
 
+  setUploading(true)
+
+  for (const file of selectedFiles) {
+    const ext = file.name.split('.').pop()
+    const fileName =
+      `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
+
+    const filePath = `${productId}/${fileName}`
+
+    const { error } = await supabase.storage
+      .from('products')
+      .upload(filePath, file)
+
+    if (error) {
+      console.error(error)
+      continue
+    }
+
+    const { data } = supabase.storage
+      .from('products')
+      .getPublicUrl(filePath)
+
+    await supabase.from('product_images').insert({
+      product_id: productId,
+      url: data.publicUrl,
+      storage_path: filePath,
+      is_primary: false,
+      sort_order: 0
+    })
+  }
+
+  setUploading(false)
+  setSelectedFiles([])
+}
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this product?')) return
     await supabase.from('product_images').delete().eq('product_id', id)
